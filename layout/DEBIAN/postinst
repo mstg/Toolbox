@@ -1,0 +1,4 @@
+#!/bin/sh
+chown root /Library/LaunchDaemons/no.gezen.toolboxweatherdaemon.plist
+chgrp wheel /Library/LaunchDaemons/no.gezen.toolboxweatherdaemon.plist
+launchctl load /Library/LaunchDaemons/no.gezen.toolboxweatherdaemon.plist
