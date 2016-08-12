@@ -1,8 +1,8 @@
 /*
 * @Author: mustafa
 * @Date:   2016-08-10 09:19:16
-* @Last Modified by:   mustafa
-* @Last Modified time: 2016-08-10 21:32:11
+* @Last Modified by:   mstg
+* @Last Modified time: 2016-08-12 20:37:33
 */
 
 #include "ToolboxSettingsModule.h"
@@ -28,10 +28,10 @@
   self = [super init];
 
   if (self) {
-    SBApplication *prefApp = [[objc_getClass("SBApplicationController") sharedInstance] applicationWithBundleIdentifier:@"com.apple.Preferences"];
-    SBApplicationIcon *prefAppIcon = [[objc_getClass("SBApplicationIcon") alloc] initWithApplication:prefApp];
+    SBApplication *prefApp = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:@"com.apple.Preferences"];
+    SBApplicationIcon *prefAppIcon = [[%c(SBApplicationIcon) alloc] initWithApplication:prefApp];
 
-    SBIconView *app = [[objc_getClass("SBIconView") alloc] initWithContentType:1];
+    SBIconView *app = [[%c(SBIconView) alloc] initWithContentType:1];
     [app setIcon:prefAppIcon];
     [self setAppIcon:(UIView*)app];
     _lastx = 5;
@@ -75,23 +75,23 @@
 }
 
 -(void)respring {
-  SpringBoard *sb = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
+  SpringBoard *sb = (SpringBoard *)[%c(SpringBoard) sharedApplication];
   if ([sb respondsToSelector:@selector(relaunchSpringBoard)]) {
     [sb _relaunchSpringBoardNow];
   } else {
-    FBSSystemService *service = [objc_getClass("FBSSystemService") sharedService];
-    NSSet *actions = [NSSet setWithObject:[objc_getClass("SBSRelaunchAction") actionWithReason:@"RestartRenderServer" options:4 targetURL:nil]];
+    FBSSystemService *service = [%c(FBSSystemService) sharedService];
+    NSSet *actions = [NSSet setWithObject:[%c(SBSRelaunchAction) actionWithReason:@"RestartRenderServer" options:4 targetURL:nil]];
     [service sendActions:actions withResult:nil];
   }
 }
 
 -(void)powerdown {
-  SpringBoard *sb = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
+  SpringBoard *sb = (SpringBoard *)[%c(SpringBoard) sharedApplication];
   [sb powerDown];
 }
 
 -(void)reboot {
-  SpringBoard *sb = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
+  SpringBoard *sb = (SpringBoard *)[%c(SpringBoard) sharedApplication];
   [sb reboot];
 }
 @end

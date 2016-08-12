@@ -1,8 +1,8 @@
 /*
 * @Author: mustafa
 * @Date:   2016-08-08 21:51:58
-* @Last Modified by:   mustafa
-* @Last Modified time: 2016-08-10 10:15:45
+* @Last Modified by:   mstg
+* @Last Modified time: 2016-08-12 20:37:09
 */
 
 #include "ToolboxWeatherModule.h"
@@ -11,9 +11,27 @@
 
 typedef void(^comp)(NSString *ret, NSString *loc, NSString *condition, City *city_obj);
 
+__attribute__((constructor)) void construct(void) {
+  get_connection();
+}
+
+__attribute__((destructor)) void destruct(void) {
+  xpc_connection_cancel(get_connection());
+}
+
+xpc_connection_t get_connection() {
+  static xpc_connection_t connection = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    connection = xpc_connection_create_mach_service("no.gezen.toolboxweatherdaemon", NULL, 0);
+    xpc_connection_set_event_handler(connection, ^(xpc_object_t obj) {});
+  });
+
+  return connction;
+}
+
 static void update_temp(comp _comp) {
-  xpc_connection_t connection = xpc_connection_create_mach_service("no.gezen.toolboxweatherdaemon", NULL, 0);
-  xpc_connection_set_event_handler(connection, ^(xpc_object_t obj) {});
+  connection = get_connection();
 
   xpc_connection_resume(connection);
   xpc_object_t object = xpc_dictionary_create(NULL, NULL, 0);
@@ -62,10 +80,10 @@ static void update_temp(comp _comp) {
   self = [super init];
 
   if (self) {
-    SBApplication *weatherApp = [[objc_getClass("SBApplicationController") sharedInstance] applicationWithBundleIdentifier:@"com.apple.weather"];
-    SBApplicationIcon *weatherAppIcon = [[objc_getClass("SBApplicationIcon") alloc] initWithApplication:weatherApp];
+    SBApplication *weatherApp = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:@"com.apple.weather"];
+    SBApplicationIcon *weatherAppIcon = [[%c(SBApplicationIcon) alloc] initWithApplication:weatherApp];
 
-    SBIconView *app = [[objc_getClass("SBIconView") alloc] initWithContentType:1];
+    SBIconView *app = [[%c(SBIconView) alloc] initWithContentType:1];
     [app setIcon:weatherAppIcon];
     [self setAppIcon:(UIView*)app];
   }

@@ -4,7 +4,7 @@ SYSROOT = $(THEOS)/sdks/iPhoneOS9.2.sdk
 include $(THEOS)/makefiles/common.mk
 
 LIBRARY_NAME = ToolboxWeatherModule
-ToolboxWeatherModule_FILES = ToolboxWeatherModule.m
+ToolboxWeatherModule_FILES = ToolboxWeatherModule.xm
 ToolboxWeatherModule_PRIVATE_FRAMEWORKS = Weather WeatherUI
 ToolboxWeatherModule_LIBRARIES = ToolboxHelper
 ToolboxWeatherModule_INSTALL_PATH = /Library/Toolbox
