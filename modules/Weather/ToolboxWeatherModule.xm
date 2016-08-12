@@ -11,14 +11,6 @@
 
 typedef void(^comp)(NSString *ret, NSString *loc, NSString *condition, City *city_obj);
 
-__attribute__((constructor)) void construct(void) {
-  get_connection();
-}
-
-__attribute__((destructor)) void destruct(void) {
-  xpc_connection_cancel(get_connection());
-}
-
 xpc_connection_t get_connection() {
   static xpc_connection_t connection = nil;
   static dispatch_once_t onceToken;
@@ -27,11 +19,19 @@ xpc_connection_t get_connection() {
     xpc_connection_set_event_handler(connection, ^(xpc_object_t obj) {});
   });
 
-  return connction;
+  return connection;
+}
+
+__attribute__((constructor)) void construct(void) {
+  get_connection();
+}
+
+__attribute__((destructor)) void destruct(void) {
+  xpc_connection_cancel(get_connection());
 }
 
 static void update_temp(comp _comp) {
-  connection = get_connection();
+  xpc_connection_t connection = get_connection();
 
   xpc_connection_resume(connection);
   xpc_object_t object = xpc_dictionary_create(NULL, NULL, 0);
