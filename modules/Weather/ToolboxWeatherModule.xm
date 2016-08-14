@@ -11,64 +11,50 @@
 
 typedef void(^comp)(NSString *ret, NSString *loc, NSString *condition, City *city_obj);
 
-xpc_connection_t get_connection() {
-  static xpc_connection_t connection = nil;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    connection = xpc_connection_create_mach_service("no.gezen.toolboxweatherdaemon", NULL, 0);
-    xpc_connection_set_event_handler(connection, ^(xpc_object_t obj) {});
-  });
-
-  return connection;
-}
-
-__attribute__((constructor)) void construct(void) {
-  get_connection();
-}
-
-__attribute__((destructor)) void destruct(void) {
-  xpc_connection_cancel(get_connection());
-}
-
 static void update_temp(comp _comp) {
-  xpc_connection_t connection = get_connection();
+  xpc_object_t connection = xpc_connection_create_mach_service("no.gezen.toolboxweatherdaemon", NULL, 0);
+  xpc_connection_set_event_handler(connection, ^(xpc_object_t obj) {});
 
   xpc_connection_resume(connection);
   xpc_object_t object = xpc_dictionary_create(NULL, NULL, 0);
   xpc_dictionary_set_string(object, "message", "GiefLocation");
 
-  xpc_object_t reply = xpc_connection_send_message_with_reply_sync(connection, object);
-  size_t length;
-  const void *bytes = xpc_dictionary_get_data(reply, "message", &length);
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul);
 
-  NSData *bytesData = [NSData dataWithBytes:bytes length:length];
-  NSArray *array = [NSKeyedUnarchiver unarchiveObjectWithData:bytesData];
+  xpc_connection_send_message_with_reply(connection, object, dispatch_get_main_queue(), ^(xpc_object_t reply) {
+    size_t length;
+    const void *bytes = xpc_dictionary_get_data(reply, "message", &length);
 
-  id obj = [array objectAtIndex:0];
+    NSData *bytesData = [NSData dataWithBytes:bytes length:length];
+    NSArray *array = [NSKeyedUnarchiver unarchiveObjectWithData:bytesData];
 
-  if ([obj isKindOfClass:[CLLocation class]]) {
-    CLLocation *currentLocation = (CLLocation*)obj;
-    City *city = [[City alloc] init];
-    [city setLocation:currentLocation];
-    [city update];
+    id obj = [array objectAtIndex:0];
 
-    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul);
-    dispatch_async(queue, ^{
-      while (true) {
-        if ([[city temperature] isEqual:@"--"]) {
-          usleep(200);
-        } else {
-          HBLogDebug(@"Temperature callback");
-          NSString *_cond = [city naturalLanguageDescriptionWithDescribedCondition:nil];
-          NSArray *_condArr = [_cond componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"."]];
-          _comp([city temperature], (NSString*)[array objectAtIndex:1], [_condArr objectAtIndex:0], city);
-          break;
+    if ([obj isKindOfClass:[CLLocation class]]) {
+      CLLocation *currentLocation = (CLLocation*)obj;
+      City *city = [[City alloc] init];
+      [city setLocation:currentLocation];
+      [city update];
+
+      dispatch_async(queue, ^{
+        while (true) {
+          if ([[city temperature] isEqual:@"--"]) {
+            usleep(200);
+          } else {
+            HBLogDebug(@"Temperature callback");
+            NSString *_cond = [city naturalLanguageDescriptionWithDescribedCondition:nil];
+            NSArray *_condArr = [_cond componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"."]];
+            _comp([city temperature], (NSString*)[array objectAtIndex:1], [_condArr objectAtIndex:0], city);
+            break;
+          }
         }
-      }
-    });
-  } else {
-    _comp(@"--", @"", @"", nil);
-  }
+      });
+    } else {
+      _comp(@"--", @"", @"", nil);
+    }
+
+    xpc_connection_cancel(connection);
+  });
 }
 
 @implementation ToolboxWeatherModule

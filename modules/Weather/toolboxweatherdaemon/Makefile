@@ -4,6 +4,7 @@ TOOL_NAME = ToolboxWeatherDaemon
 ToolboxWeatherDaemon_FILES = main.m
 ToolboxWeatherDaemon_FRAMEWORKS = CoreLocation
 ToolboxWeatherDaemon_CODESIGN_FLAGS = -Sent.plist
+ToolboxWeatherDaemon_INSTALL_PATH = /usr/local/bin
 
 include $(THEOS_MAKE_PATH)/tool.mk
 
